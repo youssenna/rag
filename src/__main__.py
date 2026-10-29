@@ -12,4 +12,5 @@ def main():
         print(path)
 
 if __name__ == "__main__":
+    fire.Fire(main)
     fire.Fire(Pipline)
