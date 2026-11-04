@@ -6,9 +6,10 @@ from .search import Search
 from .search_dataset import SearchDataset
 from .answer import Answer
 from .answer_dataset import AnswerDataset
-from .evaluate import Evaluate
-
+from .__main__ import main
 class Pipline:
+    
+    from .evaluate import Evaluate  
     def index(self, max_chunk_size: int = 2000):
         index_obj = Index(max_chunk_size)
         index_obj.run()
