@@ -3,6 +3,12 @@ from pydantic import BaseModel, Field
 from typing import List
 
 
+class Chunk(BaseModel):
+    file_path: str
+    text_content: str
+    first_character_index: int
+    last_character_index: int
+
 class MinimalSource(BaseModel):
     file_path: str
     first_character_index: int
@@ -35,4 +41,5 @@ class StudentSearchResultsAndAnswer(BaseModel):
 class StudentSearchResults(BaseModel):
     search_results: List[MinimalSearchResults]
     k: int
+    
     
