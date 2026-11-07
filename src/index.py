@@ -31,41 +31,74 @@ class PyFileChunker:
         start_index = self._lines_start[first_line-1]
         end_index = self._lines_start[last_line]
         return self._file_content[start_index: end_index]
+    def _split_line_to_chunks(self, line, last_index: int):
+        chunks: List[Chunk] = []
+        buffer = ''
+        chunk_start = 0
+        chunk_end  = self.max_chunk_size
+        while chunk_end < len(line):
+            buffer = line[chunk_start:chunk_end]
+            chunks.append(Chunk(file_path=self.file_path,
+                                text_content=buffer,
+                                first_character_index=last_index+chunk_start,
+                                last_character_index=last_index+chunk_end))
+            chunk_start = chunk_end
+            chunk_end += self.max_chunk_size
+            last_index += self.max_chunk_size
 
+        if line[chunk_start:]:
+            buffer = line[chunk_start:]
+            chunks.append(Chunk(file_path=self.file_path,
+                                text_content=buffer,
+                                first_character_index=chunk_start,
+                                last_character_index=chunk_start+len(buffer)))
+            last_index += len(buffer)
+        return chunks, last_index
+            
+        
     def get_chunks(self) -> List[Chunk]:
         chunks: List[Chunk] = []
-        chunk: str = ''
-        print("#"*100)
-        tree = ast.parse(self._file_content)
-        if len(self._file_content) <= self.max_chunk_size:
-            return [
-                Chunk(file_path=self.file_path,
-                      text_content=self._file_content,
-                      first_character_index=0,
-                      last_character_index=len(self._file_content))
-                ]
+        buffer = ''
+        print(self._file_content.splitlines(keepends=True))
+        print('#'*30)
+        line_num = 1
+        last_index = 0
+        for line in self._file_content.splitlines(keepends=True):
+            if len(line) > self.max_chunk_size:
+                parts, last_index = self._split_line_to_chunks(line, last_index)
+                chunks.extend(parts)
+            elif len(buffer) > self.max_chunk_size:
+                chunk: Chunk = Chunk(file_path=self.file_path,
+                              text_content=buffer,
+                              first_character_index=last_index,
+                              last_character_index=last_index+len(buffer))
+                chunks.append(chunk)
+                last_index += len(buffer)
+                buffer = line
+                
+            elif len(buffer) + len(line) <= self.max_chunk_size:
+                buffer += line
+        if buffer:
+            chunks.append(Chunk(file_path=self.file_path,
+                          text_content=buffer,
+                          first_character_index=last_index,
+                          last_character_index=last_index+len(buffer)))
+            # print(line)
+            # if len(buffer) + len(line) <= self.max_chunk_size:
+            #     buffer += line
+            # else:
+            #     chunk: Chunk = Chunk(file_path=self.file_path,
+            #                   text_content=buffer,
+            #                   first_character_index=last_index,
+            #                   last_character_index=last_index+len(buffer))
+            #     chunks.append(chunk)
+            #     last_index += len(buffer)
+            #     buffer = line
+        # if line:
             
-        for node in tree.body:
-            if len(chunk) + len(curr_chuk := self._get_chunk(node.lineno, node.end_lineno)) < self.max_chunk_size:
-                chunk.join(curr_chuk)
-            elif isinstance(node, ast.ClassDef):
-                for nod in node.body:
-                    if len(chunk) + len(curr_chuk := self._get_chunk(nod.lineno, nod.end_lineno)) < self.max_chunk_size:
-                        chunk.join(curr_chuk)
-                        # getattr()
-            print(type(node).__name__, node.lineno, node.end_lineno)
-            if isinstance(node, ast.ClassDef):
-                print('-'*30)
-                for nod in node.body:
-                    print(type(nod).__name__, nod.lineno, nod.end_lineno)
-                    # if isinstance(nod, ast.FunctionDef):
-                    #     print('*'*30)
-                    #     print(nod.name, nod.lineno, nod.end_lineno)
-        # print(ast.dump(tree, indent=2))
-        
-        print("#"*100)
-        for node in tree.body:
-            print(node, node.lineno, node.end_lineno)
+
+        for chunk_ in chunks:
+            print(chunk_.text_content, end='')  
 
 
 class Index:
@@ -73,7 +106,6 @@ class Index:
         self.max_chunk_size: int = max_chunk_size
         
     def run(self):
-        print("fuck you")
         chunks: List[MinimalSource] = []
         saved_dir = Path('data/processed/')
         saved_file = Path('data/processed/chunks.json')

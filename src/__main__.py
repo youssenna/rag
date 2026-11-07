@@ -10,11 +10,8 @@ from .index import PyFileChunker
 
 
 def main():
-    py_chunker = PyFileChunker('src/pipline.py')
-    for chunk in py_chunker.get_chunks():
-        print('#'*100)
-        print(chunk, end='')
-    
+    py_chunker = PyFileChunker('src/pipline.py', 500)
+    py_chunker.get_chunks()
         
 
 if __name__ == "__main__":
