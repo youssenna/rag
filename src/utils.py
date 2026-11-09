@@ -1,13 +1,15 @@
 import uuid
 from pydantic import BaseModel, Field
-from typing import List
+from typing import List, Dict
 
 
 class Chunk(BaseModel):
     file_path: str
-    text_content: str
     first_character_index: int
     last_character_index: int
+    text_content: str
+    tokens: List[str]
+    repetation: Dict[str, int]
 
 class MinimalSource(BaseModel):
     file_path: str

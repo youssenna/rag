@@ -1,10 +1,12 @@
 from .utils import MinimalSource, Chunk
 
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 from pathlib import Path
 from json import dump
 import ast
 from abc import ABC, abstractmethod
+import re
+
 
 
 class FileChunker:
@@ -28,6 +30,23 @@ class FileChunker:
             lines_start.append(lines_start[-1] + len(line))
         return lines_start
 
+
+    @staticmethod
+    def _tokonization(s: str) -> List[str]:
+        return re.findall(r"[\da-zA-Z]+", s.lower())
+    
+    def _tokens_repetation(self, text_to_tokens: List[str], text_tokens: List[str]) -> Dict[str, int]:
+        result: Dict[str] = self._initial_repetation(text_tokens)
+        for token in text_tokens:
+            if token in text_to_tokens:
+                text_to_tokens.remove(token)
+                result[token] += 1
+        return result
+            
+    @staticmethod
+    def _initial_repetation(tokens: List[str]) -> Dict[str, int]:
+        return {token: 0 for token in tokens}
+        
     @abstractmethod
     def get_chunks(self) -> List[Chunk]:
         pass
@@ -41,19 +60,33 @@ class MdFileChunker(FileChunker):
         chunk_end  = self.max_chunk_size
         while chunk_end < len(line):
             buffer = line[chunk_start:chunk_end]
+            text_to_tokens = self._tokonization(buffer)
             chunks.append(Chunk(file_path=self.file_path,
-                                text_content=buffer,
                                 first_character_index=last_index+chunk_start,
-                                last_character_index=last_index+chunk_end - 1))
+                                last_character_index=last_index+chunk_end - 1,
+                                text_content=buffer,
+                                tokens=list(set(text_to_tokens)),
+                                repetation=self._tokens_repetation(
+                                    text_to_tokens,
+                                    list(set(text_to_tokens))))
+                          )
+
             chunk_start = chunk_end
             chunk_end += self.max_chunk_size
 
         if line[chunk_start:]:
             buffer = line[chunk_start:]
+            text_to_tokens = self._tokonization(buffer)
             chunks.append(Chunk(file_path=self.file_path,
-                                text_content=buffer,
                                 first_character_index=chunk_start,
-                                last_character_index=chunk_start+len(buffer) - 1))
+                                last_character_index=chunk_start+len(buffer) - 1,
+                                text_content=buffer,
+                                tokens=list(set(text_to_tokens)),
+                                repetation=self._tokens_repetation(
+                                    text_to_tokens,
+                                    list(set(text_to_tokens))))
+                          )
+
         return chunks, last_index + len(line)
             
         
@@ -64,10 +97,17 @@ class MdFileChunker(FileChunker):
         for line in self._file_content.splitlines(keepends=True):
             if len(buffer) + len(line) > self.max_chunk_size:
                 if buffer:
+                    
+                    text_to_tokens = self._tokonization(buffer)
                     chunks.append(Chunk(file_path=self.file_path,
-                                  text_content=buffer,
                                   first_character_index=last_index,
-                                  last_character_index=last_index+len(buffer) - 1))
+                                  last_character_index=last_index+len(buffer) - 1,
+                                  text_content=buffer,
+                                  tokens=list(set(text_to_tokens)),
+                                  repetation=self._tokens_repetation(
+                                    text_to_tokens,
+                                    list(set(text_to_tokens))))
+                                  )
                     last_index += len(buffer)
                     buffer = ''
                 
@@ -78,10 +118,16 @@ class MdFileChunker(FileChunker):
                 buffer += line
       
         if buffer:
+            text_to_tokens = self._tokonization(buffer)
             chunks.append(Chunk(file_path=self.file_path,
-                          text_content=buffer,
                           first_character_index=last_index,
-                          last_character_index=last_index+len(buffer) - 1))
+                          last_character_index=last_index+len(buffer) - 1,
+                          text_content=buffer,
+                          tokens=list(set(text_to_tokens)),
+                          repetation=self._tokens_repetation(
+                            text_to_tokens,
+                            list(set(text_to_tokens))))
+                          )
         return chunks
             
     
@@ -94,19 +140,31 @@ class PyFileChunker(FileChunker):
         chunk_end  = self.max_chunk_size
         while chunk_end < len(line):
             buffer = line[chunk_start:chunk_end]
+            text_to_tokens = self._tokonization(buffer)
             chunks.append(Chunk(file_path=self.file_path,
-                                text_content=buffer,
                                 first_character_index=last_index+chunk_start,
-                                last_character_index=last_index+chunk_end - 1))
+                                last_character_index=last_index+chunk_end - 1,
+                                text_content=buffer,
+                                tokens=list(set(text_to_tokens)),
+                                repetation=self._tokens_repetation(
+                                    text_to_tokens,
+                                    list(set(text_to_tokens))))
+                          )
             chunk_start = chunk_end
             chunk_end += self.max_chunk_size
 
         if line[chunk_start:]:
             buffer = line[chunk_start:]
+            text_to_tokens = self._tokonization(buffer)
             chunks.append(Chunk(file_path=self.file_path,
-                                text_content=buffer,
                                 first_character_index=chunk_start,
-                                last_character_index=chunk_start+len(buffer) - 1))
+                                last_character_index=chunk_start+len(buffer) - 1,
+                                text_content=buffer,
+                                tokens=list(set(text_to_tokens)),
+                                repetation=self._tokens_repetation(
+                                    text_to_tokens,
+                                    list(set(text_to_tokens))))
+                          )
         return chunks, last_index + len(line)
             
         
@@ -117,10 +175,16 @@ class PyFileChunker(FileChunker):
         for line in self._file_content.splitlines(keepends=True):
             if len(buffer) + len(line) > self.max_chunk_size:
                 if buffer:
+                    text_to_tokens = self._tokonization(buffer)
                     chunks.append(Chunk(file_path=self.file_path,
-                                  text_content=buffer,
                                   first_character_index=last_index,
-                                  last_character_index=last_index+len(buffer) - 1))
+                                  last_character_index=last_index+len(buffer) - 1,
+                                  text_content=buffer,
+                                  tokens=list(set(text_to_tokens)),
+                                  repetation=self._tokens_repetation(
+                                      text_to_tokens,
+                                      list(set(text_to_tokens))))
+                                  )
                     last_index += len(buffer)
                     buffer = ''
                 
@@ -131,10 +195,16 @@ class PyFileChunker(FileChunker):
                 buffer += line
       
         if buffer:
+            text_to_tokens = self._tokonization(buffer)
             chunks.append(Chunk(file_path=self.file_path,
-                          text_content=buffer,
                           first_character_index=last_index,
-                          last_character_index=last_index+len(buffer) - 1))
+                          last_character_index=last_index+len(buffer) - 1,
+                          text_content=buffer,
+                          tokens=list(set(text_to_tokens)),
+                          repetation=self._tokens_repetation(
+                            text_to_tokens,
+                            list(set(text_to_tokens))))
+                          )
         return chunks   
 
 
