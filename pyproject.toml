@@ -8,5 +8,6 @@ dependencies = [
     "fire>=0.7.1",
     "pdbpp",
     "pydantic>=2.14.1",
+    "pytest>=9.2.0",
     "tqdm>=4.70.1",
 ]

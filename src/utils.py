@@ -8,8 +8,8 @@ class Chunk(BaseModel):
     first_character_index: int
     last_character_index: int
     text_content: str
-    tokens: List[str]
-    repetation: Dict[str, int]
+    tokens_len: int
+    repetition: Dict[str, int]
 
 class MinimalSource(BaseModel):
     file_path: str
