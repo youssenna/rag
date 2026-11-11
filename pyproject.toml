@@ -5,6 +5,7 @@ description = "Build a Retrieval-Augmented Generation system that answers questi
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "bm25s>=0.3.16",
     "fire>=0.7.1",
     "pdbpp",
     "pydantic>=2.14.1",
