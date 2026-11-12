@@ -17,7 +17,7 @@ def main():
               'welcome to the fUtuer']
     corpus_tokens = bm25s.tokenize(corpus)
     print(corpus_tokens)
-    retriver = bm25s.BM25(corpus=corpus)
+    retriver = bm25s.BM25()
     retriver.index(corpus_tokens)
     
     query = "are you from morroco_"
@@ -31,4 +31,4 @@ def main():
         
 
 if __name__ == "__main__":
-    fire.Fire(main)
+    fire.Fire(Pipline)

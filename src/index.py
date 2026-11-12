@@ -6,6 +6,7 @@ from json import dump
 import ast
 from abc import ABC, abstractmethod
 import re
+import bm25s
 
 
 
@@ -31,21 +32,7 @@ class FileChunker:
         return lines_start
 
 
-    @staticmethod
-    def _tokonization(s: str) -> List[str]:
-        return re.findall(r"[\da-zA-Z]+", s.lower())
-    
-    def _tokens_repetition(self, text_to_tokens: List[str], text_tokens: List[str]) -> Dict[str, int]:
-        result: Dict[str] = self._initial_repetition(text_tokens)
-        for token in text_tokens:
-            while token in text_to_tokens:
-                text_to_tokens.remove(token)
-                result[token] += 1
-        return result
-            
-    @staticmethod
-    def _initial_repetition(tokens: List[str]) -> Dict[str, int]:
-        return {token: 0 for token in tokens}
+
         
     @abstractmethod
     def get_chunks(self) -> List[Chunk]:
@@ -60,15 +47,11 @@ class MdFileChunker(FileChunker):
         chunk_end  = self.max_chunk_size
         while chunk_end < len(line):
             buffer = line[chunk_start:chunk_end]
-            text_to_tokens = self._tokonization(buffer)
+            
             chunks.append(Chunk(file_path=self.file_path,
                                 first_character_index=last_index+chunk_start,
                                 last_character_index=last_index+chunk_end - 1,
-                                text_content=buffer,
-                                tokens_len=len(text_to_tokens),
-                                repetition=self._tokens_repetition(
-                                    text_to_tokens,
-                                    list(set(text_to_tokens))))
+                                text_content=buffer)
                           )
 
             chunk_start = chunk_end
@@ -76,15 +59,11 @@ class MdFileChunker(FileChunker):
 
         if line[chunk_start:]:
             buffer = line[chunk_start:]
-            text_to_tokens = self._tokonization(buffer)
+            
             chunks.append(Chunk(file_path=self.file_path,
                                 first_character_index=last_index + chunk_start,
                                 last_character_index=last_index + chunk_start+len(buffer) - 1,
-                                text_content=buffer,
-                                tokens_len=len(text_to_tokens),
-                                repetition=self._tokens_repetition(
-                                    text_to_tokens,
-                                    list(set(text_to_tokens))))
+                                text_content=buffer)
                           )
 
         return chunks, last_index + len(line)
@@ -98,15 +77,11 @@ class MdFileChunker(FileChunker):
             if len(buffer) + len(line) > self.max_chunk_size:
                 if buffer:
                     
-                    text_to_tokens = self._tokonization(buffer)
+                    
                     chunks.append(Chunk(file_path=self.file_path,
                                   first_character_index=last_index,
                                   last_character_index=last_index+len(buffer) - 1,
-                                  text_content=buffer,
-                                  tokens_len=len(text_to_tokens),
-                                  repetition=self._tokens_repetition(
-                                    text_to_tokens,
-                                    list(set(text_to_tokens))))
+                                  text_content=buffer)
                                   )
                     last_index += len(buffer)
                     buffer = ''
@@ -118,15 +93,11 @@ class MdFileChunker(FileChunker):
                 buffer += line
       
         if buffer:
-            text_to_tokens = self._tokonization(buffer)
+            
             chunks.append(Chunk(file_path=self.file_path,
                           first_character_index=last_index,
                           last_character_index=last_index+len(buffer) - 1,
-                          text_content=buffer,
-                          tokens_len=len(text_to_tokens),
-                          repetition=self._tokens_repetition(
-                            text_to_tokens,
-                            list(set(text_to_tokens))))
+                          text_content=buffer)
                           )
         return chunks
             
@@ -140,30 +111,22 @@ class PyFileChunker(FileChunker):
         chunk_end  = self.max_chunk_size
         while chunk_end < len(line):
             buffer = line[chunk_start:chunk_end]
-            text_to_tokens = self._tokonization(buffer)
+            
             chunks.append(Chunk(file_path=self.file_path,
                                 first_character_index=last_index+chunk_start,
                                 last_character_index=last_index+chunk_end - 1,
-                                text_content=buffer,
-                                tokens_len=len(text_to_tokens),
-                                repetition=self._tokens_repetition(
-                                    text_to_tokens,
-                                    list(set(text_to_tokens))))
+                                text_content=buffer)
                           )
             chunk_start = chunk_end
             chunk_end += self.max_chunk_size
 
         if line[chunk_start:]:
             buffer = line[chunk_start:]
-            text_to_tokens = self._tokonization(buffer)
+            
             chunks.append(Chunk(file_path=self.file_path,
                                 first_character_index=last_index + chunk_start,
                                 last_character_index=last_index + chunk_start+len(buffer) - 1,
-                                text_content=buffer,
-                                tokens_len=len(text_to_tokens),
-                                repetition=self._tokens_repetition(
-                                    text_to_tokens,
-                                    list(set(text_to_tokens))))
+                                text_content=buffer)
                           )
         return chunks, last_index + len(line)
             
@@ -175,15 +138,11 @@ class PyFileChunker(FileChunker):
         for line in self._file_content.splitlines(keepends=True):
             if len(buffer) + len(line) > self.max_chunk_size:
                 if buffer:
-                    text_to_tokens = self._tokonization(buffer)
+                    
                     chunks.append(Chunk(file_path=self.file_path,
                                   first_character_index=last_index,
                                   last_character_index=last_index+len(buffer) - 1,
-                                  text_content=buffer,
-                                  tokens_len=len(text_to_tokens),
-                                  repetition=self._tokens_repetition(
-                                      text_to_tokens,
-                                      list(set(text_to_tokens))))
+                                  text_content=buffer)
                                   )
                     last_index += len(buffer)
                     buffer = ''
@@ -195,15 +154,11 @@ class PyFileChunker(FileChunker):
                 buffer += line
       
         if buffer:
-            text_to_tokens = self._tokonization(buffer)
+            
             chunks.append(Chunk(file_path=self.file_path,
                           first_character_index=last_index,
                           last_character_index=last_index+len(buffer) - 1,
-                          text_content=buffer,
-                          tokens_len=len(text_to_tokens),
-                          repetition=self._tokens_repetition(
-                                text_to_tokens,
-                                list(set(text_to_tokens))))
+                          text_content=buffer)
                           )
         return chunks   
 
@@ -214,7 +169,7 @@ class Index:
         
     def run(self):
         chunks: List[Chunk] = []
-        saved_dir = Path('data/processed/')
+        saved_dir = Path('data/processed')
         saved_file = Path('data/processed/chunks.json')
         root_folder = Path("data/raw/vllm-0.10.1")
         for py_file in root_folder.rglob('*.py'):
@@ -229,7 +184,15 @@ class Index:
         
         json_str = [chunk.model_dump() for chunk in chunks]
         # print(json_str)
+        corpus = [chunk.text_content for chunk in chunks]
+        corpus_tokens = bm25s.tokenize(corpus)
+        
+        retrive = bm25s.BM25()
+        retrive.index(corpus_tokens, leave_progress=True)
+        retrive.save('data/processed/index/')
+        
         with open(saved_file, 'w') as f:
             dump(json_str, f, indent=4)
+        
             
         print('Ingestion complete! Indices saved under data/processed/')
