@@ -10,14 +10,14 @@ class Search:
         self.q_id: str = q_id
         
         
-    def run(self, debug: bool) -> List[MinimalSearchResults]:
+    def run(self, debug: bool) -> List[MinimalSource]:
         retrive = bm25s.BM25.load('data/processed/index')
         query_tokens = bm25s.tokenize(self.query)
         docs, scores = retrive.retrieve(query_tokens, k=self.k, leave_progress=True)
         with open('data/processed/chunks.json', 'r', encoding='utf-8') as f:
             data: List[Chunk] = json.load(f)
         # print(data)
-        retrived_results: List[MinimalSearchResults] = []
+        retrived_results: List[MinimalSource] = []
         for index, score in zip(docs.tolist()[0], scores.tolist()[0]):
             if score:
                 source = MinimalSource(file_path=data[index]['file_path'],
@@ -29,7 +29,4 @@ class Search:
                     print("="*30)
                     print(f'score = {score}:', source.file_path,
                           f"[{source.first_character_index}: {source.last_character_index}]")
-        return MinimalSearchResults(question_id=self.q_id,
-                                    question=self.query,
-                                    retrieved_sources=retrived_results
-                                    )
+        return retrived_results
