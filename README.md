@@ -1,203 +1,39 @@
-# Moulinette
+<b>This project has been created as part of the 42 curriculum by yousenna</b>
+# how to run the project step by step.
 
+## run index command with 2000 in max_chunk_size
 
-
-Evaluation system for RAG submissions. Validates your search results and calculates recall metrics.
-
-
-
-## Installation
-
-
-
-```bash
-
-uv venv && uv sync
-
-direnv allow  # or source .envrc
-
+```sh
+uv run -m src index --max_chunk_size=2000
 ```
 
 
-## CLI Commands
+## retrive code and docs dataset
+### run search_dataset command for code dataset
 
-
-
-### evaluate_student_search_results
-
-
-
-Evaluate your search results against the ground truth dataset.
-
-
-
-```bash
-
-uv run python -m moulinette evaluate_student_search_results \
-
-    <student_results_path> \
-
-    <dataset_path> \
-
-    [--k K] \
-
-    [--max_context_length MAX_LENGTH]
-
+```sh
+uv run -m src search_dataset --dataset_path data/datasets/UnansweredQuestions/dataset_code_public.json --k 10 --save_directory data/output/search_results/UnansweredQuestions
 ```
 
+### run search_dataset command for docs dataset
 
 
-
-**Arguments:**
-
-| Argument | Type | Default | Description |
-
-|----------|------|---------|-------------|
-
-| `student_results_path` | str | required | Path to student search results JSON |
-
-| `dataset_path` | str | required | Path to ground truth dataset JSON |
-
-| `--k` | int | 10 | Maximum number of sources per question |
-
-| `--max_context_length` | int | 2000 | Maximum context length per source |
-
-
-
-**Example:**
-
-```bash
-
-uv run python -m moulinette evaluate_student_search_results \
-
-    ../data/output/search_results/dataset_code_public.json \
-
-    ../data/datasets/AnsweredQuestions/dataset_code_public.json \
-
-    --k 10 \
-
-    --max_context_length 2000
-
+```sh
+uv run -m src search_dataset --dataset_path data/datasets/UnansweredQuestions/dataset_docs_public.json --k 10 --save_directory data/output/search_results/UnansweredQuestions
 ```
 
-
-
-**Output:**
-
-- Validates student data format
-
-- Calculates Recall@1, Recall@3, Recall@5, Recall@10
-
-- Returns `True` if Recall@5 >= 50%, `False` otherwise
-
-
-
-
-### evaluate_student_answers
-
-
-
-Evaluate your generated answers (not yet implemented).
-
-
-
-```bash
-
-uv run python -m moulinette evaluate_student_answers <student_answer_path>
-
+## Evaluation:
+### evaluate code dataset:
+``` sh
+uv run -m src evaluate \
+data/output/search_results/UnansweredQuestions/dataset_code_public.json \
+data/datasets/AnsweredQuestions/dataset_code_public.json --k 10 --max_context_length 2000
 ```
 
-
-
-## Pass Criteria
-
-
-| Dataset | Metric | Threshold |
-
-|---------|--------|-----------|
-
-| Code | Recall@5 | >= 50% |
-
-| Docs | Recall@5 | >= 80% |
-
-
-
-## Input File Formats
-
-
-
-### Your Search Results (`student_results_path`)
-
-```json
-
-{
-
-  "search_results": [
-
-    {
-
-      "question_id": "uuid",
-
-      "question": "What is the question text?",
-
-      "retrieved_sources": [
-
-        {
-
-          "file_path": "data/raw/vllm-0.10.1/path/to/file",
-
-          "first_character_index": 0,
-
-          "last_character_index": 500
-
-        }
-
-      ]
-
-    }
-
-  ],
-
-  "k": 10
-
-}
-
+### evaluate docs dataset:
+``` sh
+uv run -m src evaluate \
+data/output/search_results/UnansweredQuestions/dataset_docs_public.json \
+data/datasets/AnsweredQuestions/dataset_docs_public.json --k 10 --max_context_length 2000
 ```
 
-
-
-### Ground Truth Dataset (`dataset_path`)
-
-```json
-
-{
-
-  "rag_questions": [
-
-    {
-
-      "question_id": "uuid",
-
-      "question": "What is...",
-
-      "answer": "The answer is...",
-
-      "sources": [
-
-        {
-
-          "file_path": "data/raw/vllm-0.10.1/path/to/file",
-
-          "first_character_index": 0,
-
-          "last_character_index": 500
-
-        }
-
-      ]
-
-    }
-
-  ]
-
-}

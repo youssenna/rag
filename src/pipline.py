@@ -39,6 +39,6 @@ class Pipline:
         answer_dataset_obj = AnswerDataset(student_search_results_path, save_directory)
         answer_dataset_obj.run()
 
-    def evaluate(self, student_search_results_path: str, dataset_path: str):
-        evaluate_obj = Evaluate(student_search_results_path, dataset_path)
+    def evaluate(self, student_search_results_path: str, dataset_path: str, k: int, max_context_length: int):
+        evaluate_obj = Evaluate(student_search_results_path, dataset_path, k, max_context_length)
         evaluate_obj.run()
