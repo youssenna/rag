@@ -1,16 +1,18 @@
 import bm25s
+
 import json
-from .utils import Chunk, MinimalSource, MinimalSearchResults
 from typing import List
 
+from .utils import Chunk, MinimalSource
+
+
 class Search:
-    def __init__(self, query: str, k: int, q_id: str):
+    def __init__(self, query: str, k: int):
         self.query: str = query
         self.k: int = k
-        self.q_id: str = q_id
         
         
-    def run(self, debug: bool) -> List[MinimalSource]:
+    def run(self) -> List[MinimalSource]:
         retrive = bm25s.BM25.load('data/processed/index')
         query_tokens = bm25s.tokenize(self.query)
         docs, scores = retrive.retrieve(query_tokens, k=self.k, leave_progress=True)
@@ -25,8 +27,8 @@ class Search:
                                        last_character_index=data[index]['last_character_index']
                                        )
                 retrived_results.append(source)        
-                if debug:
-                    print("="*30)
-                    print(f'score = {score}:', source.file_path,
-                          f"[{source.first_character_index}: {source.last_character_index}]")
+            print("="*30)
+            print(f'score = {score}:', source.file_path,
+                    f"[{source.first_character_index}: {source.last_character_index}]")
+        # print(retrived_results)
         return retrived_results

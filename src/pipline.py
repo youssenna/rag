@@ -21,9 +21,9 @@ class Pipline:
         index_obj.run()
         
 
-    def search(self, query: str, k: int, debug: bool=False):
+    def search(self, query: str, k: int):
         search_obj = Search(query=query, k=k)
-        search_obj.run(debug)
+        search_obj.run()
     
     def search_dataset(self, dataset_path: str, k: int, save_directory: str):
         search_dataset_obj = SearchDataset(dataset_path, k, save_directory)

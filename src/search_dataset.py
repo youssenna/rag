@@ -27,12 +27,10 @@ class SearchDataset:
                 # print(questions)
                 # i need to fix something her
                 for q in questions["rag_questions"]:
-                    print(q)
-                    print(q['question_id'])
-                    search_results = Search(q['question'], self.k, q['question_id'])
+                    search_results = Search(q['question'], self.k)
                     result.append(MinimalSearchResults(question_id=q['question_id'],
                                                        question= q['question'],
-                                                       retrieved_sources=search_results.run(debug=False)))
+                                                       retrieved_sources=search_results.run()))
                 with open(result_file_path, 'w') as output_file:
                     
                     student_search_result = StudentSearchResults(search_results=result, k=self.k)
