@@ -10,8 +10,8 @@ class AnswerDataset:
     def __init__(self, student_search_results_path: str, save_directory: str):
         self.student_search_results_path: str = student_search_results_path
         self.save_directory: str = save_directory
-        # self.tokenizer = AutoTokenizer.from_pretrained('Qwen/Qwen3-0.6B')
-        # self.model = AutoModelForCausalLM.from_pretrained('Qwen/Qwen3-0.6B')
+        self.tokenizer = AutoTokenizer.from_pretrained('Qwen/Qwen3-0.6B')
+        self.model = AutoModelForCausalLM.from_pretrained('Qwen/Qwen3-0.6B')
         
     @staticmethod
     def _get_retrieved_sources(sources):
@@ -24,6 +24,34 @@ class AnswerDataset:
                 
         return result
 
+    def _get_answer(self, context_and_question: str):
+        system_mesg = '''
+- You are an assistant that answers questions about a software project.
+- You will recive provided context and you should use it as referece to answer the given question.
+- if the provided context does not have the answer of the question tell it in the answer, and give answer outside the provided context
+'''
+        messages = [
+                    {
+                        "role": "system",
+                        "content": system_mesg
+                    },
+                    {
+                        "role": "user",
+                        "content": context_and_question
+                    }
+        ]
+        tokenized_chat = self.tokenizer.apply_chat_template(messages,
+                                                        tokenize=True,
+                                                        add_generation_prompt=True,
+                                                        return_tensors='pt',
+                                                        add_special_tokens=False,
+                                                        enable_thinking=False).to(self.model.device)
+        output = self.model.generate(**tokenized_chat, max_new_tokens=120)
+        input_len = tokenized_chat['input_ids'].shape[-1]
+        answer = self.tokenizer.decode(output[0][input_len:], skip_special_tokens=True)
+        # print(answer)
+        return answer
+
     def run(self):
         save_directory = Path(self.save_directory)
         src_file = Path(self.student_search_results_path)
@@ -32,7 +60,7 @@ class AnswerDataset:
         save_file.touch()
         answers: List[MinimalAnswer] = []
         
-        
+    
         with open(Path(self.student_search_results_path), 'r', encoding='utf-8') as student_search_file:
             src_obj = load(student_search_file)
             # print(src_obj)
@@ -40,12 +68,11 @@ class AnswerDataset:
             for index, q in enumerate(src_obj['search_results']):
                 query = self._get_retrieved_sources(q['retrieved_sources'])
                 query += f'\nQuestion {index +1}:\n{q['question']}\n'
-                answer_obj = Answer(query=query,
-                                    k=k)
                 answers.append(MinimalAnswer(question_id=q['question_id'],
                                              question=q['question'],
                                              retrieved_sources=q['retrieved_sources'],
-                                             answer=answer_obj.run()))
+                                             answer=self._get_answer(query)))
+                # return 
         result = StudentSearchResultsAndAnswer(search_results=answers, k=k)    
         with open(save_file, 'w') as save_f:
             dump(result.model_dump(), save_f, indent=4)

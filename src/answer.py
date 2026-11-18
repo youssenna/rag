@@ -31,12 +31,13 @@ class Answer:
         system_mesg = '''
 - You are an assistant that answers questions about a software project.
 - You will recive provided context and you should use it as referece to answer the given question.
+- if the provided context does not have the answer of the question tell it in the answer, and give answer outside the provided context
 '''
         
         user_mesg = self._get_provided_context()
         user_mesg += '\n\n' + '#'*30 + ' Question ' + '#'*30
         user_mesg += f'\n{self.query}'
-        print(user_mesg)
+        # print(user_mesg)
         # return 
         
         messages = [
