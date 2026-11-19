@@ -37,3 +37,11 @@ data/output/search_results/UnansweredQuestions/dataset_docs_public.json \
 data/datasets/AnsweredQuestions/dataset_docs_public.json --k 10 --max_context_length 2000
 ```
 
+
+## resources
+
+- [How to Build RAG Applications with LangChain.](https://oneuptime.com/blog/post/2026-01-26-langchain-rag-applications/view)
+
+- [transformmers library and how to use it to load a model and take answers from it.](https://huggingface.co/docs/transformers/en/index)
+
+- [bm25 resources](https://bm25s.github.io/)

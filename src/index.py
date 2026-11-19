@@ -1,5 +1,7 @@
 from .utils import MinimalSource, Chunk
 
+from langchain_community.document_loaders import PythonLoader, DirectoryLoader, UnstructuredMarkdownLoader
+
 from typing import List, Tuple, Dict
 from pathlib import Path
 from json import dump
@@ -168,31 +170,47 @@ class Index:
         self.max_chunk_size: int = max_chunk_size
         
     def run(self):
-        chunks: List[Chunk] = []
-        saved_dir = Path('data/processed')
-        saved_file = Path('data/processed/chunks.json')
-        root_folder = Path("data/raw/vllm-0.10.1")
-        for py_file in root_folder.rglob('*.py'):
+        py_loader = DirectoryLoader(path='data/raw/vllm-0.10.1',
+                                 glob='**/*.py',
+                                 loader_cls=PythonLoader,
+                                 show_progress=True)
+        py_decoments = py_loader.load()
+        md_loader = DirectoryLoader(path='data/raw/vllm-0.10.1',
+                                    glob='**/*.md',
+                                    loader_cls=UnstructuredMarkdownLoader,
+                                    show_progress=True)
+        md_decoments = md_loader.load()
+        for dec in md_decoments:
+            print(dec.page_content)
+        # chunks: List[Chunk] = []
+        # saved_dir = Path('data/processed')
+        # saved_file = Path('data/processed/chunks.json')
+        # root_folder = Path("data/raw/vllm-0.10.1")
+        # for py_file in root_folder.rglob('*.py'):
+        #     # loader = PythonLoader(py_file)
+        #     # decoment = loader.load()
+        #     print(py_file)
+            # return
             # with open(py_file, 'r') as f:
-            file_chunks = PyFileChunker(str(py_file), self.max_chunk_size)
-            chunks.extend(file_chunks.get_chunks())
-        for md_file in root_folder.rglob('*.md'):
-            file_chunks = MdFileChunker(str(md_file), self.max_chunk_size)
-            chunks.extend(file_chunks.get_chunks())
-        saved_dir.mkdir(parents=True, exist_ok=True)
-        saved_file.touch(exist_ok=True)
+            # file_chunks = PyFileChunker(str(py_file), self.max_chunk_size)
+            # chunks.extend(file_chunks.get_chunks())
+        # for md_file in root_folder.rglob('*.md'):
+        #     file_chunks = MdFileChunker(str(md_file), self.max_chunk_size)
+        #     chunks.extend(file_chunks.get_chunks())
+        # saved_dir.mkdir(parents=True, exist_ok=True)
+        # saved_file.touch(exist_ok=True)
         
-        json_str = [chunk.model_dump() for chunk in chunks]
-        # print(json_str)
-        corpus = [chunk.text_content for chunk in chunks]
-        corpus_tokens = bm25s.tokenize(corpus)
+        # json_str = [chunk.model_dump() for chunk in chunks]
+        # # print(json_str)
+        # corpus = [chunk.text_content for chunk in chunks]
+        # corpus_tokens = bm25s.tokenize(corpus)
         
-        retrive = bm25s.BM25()
-        retrive.index(corpus_tokens, leave_progress=True)
-        retrive.save('data/processed/index/')
+        # retrive = bm25s.BM25()
+        # retrive.index(corpus_tokens, leave_progress=True)
+        # retrive.save('data/processed/index/')
         
-        with open(saved_file, 'w') as f:
-            dump(json_str, f, indent=4)
+        # with open(saved_file, 'w') as f:
+        #     dump(json_str, f, indent=4)
         
             
         print('Ingestion complete! Indices saved under data/processed/')

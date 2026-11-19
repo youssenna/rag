@@ -31,7 +31,7 @@ class Answer:
         system_mesg = '''
 - You are an assistant that answers questions about a software project.
 - You will recive provided context and you should use it as referece to answer the given question.
-- if the provided context does not have the answer of the question tell it in the answer, and give answer outside the provided context
+- if the provided context does not have the answer to the question mention that in the answer, and give don't answer outside the provided context
 '''
         
         user_mesg = self._get_provided_context()
