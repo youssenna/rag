@@ -1,38 +1,42 @@
 from .utils import MinimalSource, Chunk
 
-from langchain_community.document_loaders import PythonLoader, DirectoryLoader, UnstructuredMarkdownLoader
+from langchain_community.document_loaders import PythonLoader, DirectoryLoader
 from langchain_text_splitters import Language, RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
 
 
 
-from typing import List, Tuple, Dict
+from typing import List, Tuple
 from pathlib import Path
 from json import dump
-import ast
 from abc import ABC, abstractmethod
-import re
 import bm25s
-
 
 
 class FileChunker(ABC):
     def __init__(self, file_path: str, max_chunk_size: int = 2000):
         self.file_path: str = file_path
         self.max_chunk_size: int = max_chunk_size
-        # self._lines_start will store the index of the first charcter 
-        # of every line in the file
-                
 
-
-
-        
     @abstractmethod
     def get_chunks(self) -> List[Chunk]:
         pass
 
 
 class MdFileChunker(FileChunker):
+    def __init__(self, file_path, max_chunk_size = 2000):
+        super().__init__(file_path, max_chunk_size)
+        self._file_content: str = self._get_file_content()
+        # self._lines_start will store the index of the first charcter 
+        # of every line in the file
+
+
+    def _get_file_content(self) -> str:
+        with open(self.file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        return content
+            
+
     def _split_line_to_chunks(self, line, last_index: int) -> Tuple[List[Chunk], int]:
         chunks: List[Chunk] = []
         buffer = ''
@@ -93,7 +97,6 @@ class MdFileChunker(FileChunker):
                           text_content=buffer)
                           )
         return chunks
-            
     
 
 class PyFileChunker(FileChunker):
@@ -136,26 +139,6 @@ class Index:
         self.max_chunk_size: int = max_chunk_size
         
     def run(self):
-        # py_loader = DirectoryLoader(path='data/raw/vllm-0.10.1',
-        #                          glob='**/*.py',
-        #                          loader_cls=PythonLoader,
-        #                          show_progress=True)
-        # py_decoments = py_loader.load()
-        # md_loader = DirectoryLoader(path='data/raw/vllm-0.10.1',
-        #                             glob='**/*.md',
-        #                             loader_cls=UnstructuredMarkdownLoader,
-        #                             show_progress=True)
-        # md_decoments = md_loader.load()
-        # # for dec in md_decoments:
-        # #     print(dec.page_content)
-            
-        # python_spliter = RecursiveCharacterTextSplitter.from_language(language=Language.PYTHON,
-        #                                                               chunk_size=self.max_chunk_size,
-        #                                                               chunk_overlap=self.max_chunk_size // 10,
-        #                                                               add_start_index=True)
-        
-        # chunks = python_spliter.split_documents(PythonLoader('data/raw/vllm-0.10.1/setup.py').load())
-        # print(chunks)
         chunks: List[Chunk] = []
         saved_dir = Path('data/processed')
         saved_file = Path('data/processed/chunks.json')
@@ -164,14 +147,14 @@ class Index:
         python_chunker = PyFileChunker(root_folder, self.max_chunk_size)
         chunks.extend(python_chunker.get_chunks())
 
-        # for md_file in root_folder.rglob('*.md'):
-        #     file_chunks = MdFileChunker(str(md_file), self.max_chunk_size)
-        #     chunks.extend(file_chunks.get_chunks())
+        for md_file in root_folder.rglob('*.md'):
+            print(md_file)
+            file_chunks = MdFileChunker(str(md_file), self.max_chunk_size)
+            chunks.extend(file_chunks.get_chunks())
         saved_dir.mkdir(parents=True, exist_ok=True)
         saved_file.touch(exist_ok=True)
         
         json_str = [chunk.model_dump() for chunk in chunks]
-        # print(json_str)
         corpus = [chunk.text_content for chunk in chunks]
         corpus_tokens = bm25s.tokenize(corpus)
         
@@ -181,6 +164,5 @@ class Index:
         
         with open(saved_file, 'w') as f:
             dump(json_str, f, indent=4)
-        
             
         print('Ingestion complete! Indices saved under data/processed/')
